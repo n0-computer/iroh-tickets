@@ -22,7 +22,7 @@ unused-async = "warn"
 [dependencies]
 data-encoding = "2.9.0"
 derive_more = { version = "2.0.1", features = ["display"] }
-iroh-base = "0.93.2"
+iroh-base = { version = "0.93.2", features = ["key"] }
 nested_enum_utils = "0.2.2"
 n0-snafu = "0.2.2"
 postcard = "1.1.3"
