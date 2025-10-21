@@ -16,7 +16,7 @@ env:
   RUST_BACKTRACE: 1
   RUSTFLAGS: -Dwarnings
   RUSTDOCFLAGS: -Dwarnings
-  MSRV: "1.81"
+  MSRV: "1.85"
   SCCACHE_CACHE_SIZE: "50G"
   IROH_FORCE_STAGING_RELAYS: "1"
 
@@ -145,7 +145,7 @@ jobs:
     - name: test
       run: cross test --all --target ${{ matrix.target }} -- --test-threads=12
       env:
-        RUST_LOG: ${{ runner.debug && 'TRACE' || 'DEBUG' }}        
+        RUST_LOG: ${{ runner.debug && 'TRACE' || 'DEBUG' }}
 
   check_semver:
     runs-on: ubuntu-latest
@@ -173,7 +173,7 @@ jobs:
         # uses: obi1kenobi/cargo-semver-checks-action@v2
         uses: n0-computer/cargo-semver-checks-action@feat-baseline
         with:
-          package: n0-watcher
+          package: iroh-tickets
           baseline-rev: ${{ env.HEAD_COMMIT_SHA }}
           use-cache: false
 
