@@ -36,7 +36,6 @@ enum TicketWireFormat {
     Variant1(Variant1EndpointTicket),
 }
 
-// Legacy
 #[derive(Serialize, Deserialize)]
 struct Variant1EndpointTicket {
     addr: Variant1EndpointAddr,
@@ -226,8 +225,6 @@ mod tests {
         // 01
         // 00
         // 7f0000018008
-        dbg!(&expected);
-        dbg!(HEXLOWER.encode(&base32));
         let expected = HEXLOWER.decode(expected.concat().as_bytes()).unwrap();
         assert_eq!(base32, expected);
     }

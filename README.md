@@ -2,10 +2,6 @@
 
 > Simple ticket system used for signaling with [iroh](https://github.com/n0-computer/iroh).
 
-## Usage
-
-TODO
-
 
 ## License
 
