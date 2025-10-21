@@ -3,11 +3,7 @@
 //! ticket would contain the hash of the data as well as information about how to reach the
 //! provider.
 
-use std::{collections::BTreeSet, net::SocketAddr};
-
-use iroh_base::{EndpointId, RelayUrl};
 use nested_enum_utils::common_fields;
-use serde::{Deserialize, Serialize};
 use snafu::{Backtrace, Snafu};
 
 pub mod endpoint;
@@ -97,16 +93,4 @@ impl ParseError {
     pub fn verification_failed(message: &'static str) -> Self {
         VerifySnafu { message }.build()
     }
-}
-
-#[derive(Serialize, Deserialize)]
-struct Variant0NodeAddr {
-    node_id: EndpointId,
-    info: Variant0AddrInfo,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Variant0AddrInfo {
-    relay_url: Option<RelayUrl>,
-    direct_addresses: BTreeSet<SocketAddr>,
 }

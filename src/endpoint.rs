@@ -1,18 +1,17 @@
 //! Tickets for endpoints.
 
-use std::str::FromStr;
+use std::{collections::BTreeSet, str::FromStr};
 
-use iroh_base::EndpointAddr;
+use iroh_base::{EndpointAddr, EndpointId, TransportAddr};
 use serde::{Deserialize, Serialize};
 
-use crate::{ParseError, Ticket, Variant0AddrInfo, Variant0NodeAddr};
+use crate::{ParseError, Ticket};
 
 /// A token containing information for establishing a connection to an endpoint.
 ///
 /// Contains
 /// - The [`EndpointId`] of the endpoint to connect to (a 32-byte ed25519 public key).
-/// - If used, the ['RelayUrl`] of on which the endpoint can be reached.
-/// - Any *direct addresses* on which the endpoint might be reachable.
+/// - Any known [`TransportAddr`]s on which the endpoint can be reached.
 ///
 /// This allows establishing a connection to the endpoint in most circumstances where it is
 /// possible to do so.
@@ -24,35 +23,34 @@ use crate::{ParseError, Ticket, Variant0AddrInfo, Variant0NodeAddr};
 /// [`EndpointId`]: crate::key::EndpointId
 /// [`Display`]: std::fmt::Display
 /// [`FromStr`]: std::str::FromStr
-/// ['RelayUrl`]: crate::relay_url::RelayUrl
+/// [`TransportAddr`]: crate::TransportAddr
 #[derive(Debug, Clone, PartialEq, Eq, derive_more::Display)]
 #[display("{}", Ticket::serialize(self))]
 pub struct EndpointTicket {
-    node: EndpointAddr,
+    addr: EndpointAddr,
 }
 
 /// Wire format for [`EndpointTicket`].
 #[derive(Serialize, Deserialize)]
 enum TicketWireFormat {
-    Variant0(Variant0NodeTicket),
+    Variant1(Variant1EndpointTicket),
 }
 
 // Legacy
 #[derive(Serialize, Deserialize)]
-struct Variant0NodeTicket {
-    node: Variant0NodeAddr,
+struct Variant1EndpointTicket {
+    addr: Variant1EndpointAddr,
 }
 
 impl Ticket for EndpointTicket {
-    const KIND: &'static str = "node";
+    const KIND: &'static str = "endpoint";
 
     fn to_bytes(&self) -> Vec<u8> {
-        let data = TicketWireFormat::Variant0(Variant0NodeTicket {
-            node: Variant0NodeAddr {
-                node_id: self.node.endpoint_id,
-                info: Variant0AddrInfo {
-                    relay_url: self.node.relay_url.clone(),
-                    direct_addresses: self.node.direct_addresses.clone(),
+        let data = TicketWireFormat::Variant1(Variant1EndpointTicket {
+            addr: Variant1EndpointAddr {
+                id: self.addr.id,
+                info: Variant1AddrInfo {
+                    addrs: self.addr.addrs.clone(),
                 },
             },
         });
@@ -61,12 +59,11 @@ impl Ticket for EndpointTicket {
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ParseError> {
         let res: TicketWireFormat = postcard::from_bytes(bytes)?;
-        let TicketWireFormat::Variant0(Variant0NodeTicket { node }) = res;
+        let TicketWireFormat::Variant1(Variant1EndpointTicket { addr }) = res;
         Ok(Self {
-            node: EndpointAddr {
-                endpoint_id: node.node_id,
-                relay_url: node.info.relay_url,
-                direct_addresses: node.info.direct_addresses,
+            addr: EndpointAddr {
+                id: addr.id,
+                addrs: addr.info.addrs,
             },
         })
     }
@@ -82,27 +79,27 @@ impl FromStr for EndpointTicket {
 
 impl EndpointTicket {
     /// Creates a new ticket.
-    pub fn new(node: EndpointAddr) -> Self {
-        Self { node }
+    pub fn new(addr: EndpointAddr) -> Self {
+        Self { addr }
     }
 
     /// The [`EndpointAddr`] of the provider for this ticket.
     pub fn endpoint_addr(&self) -> &EndpointAddr {
-        &self.node
+        &self.addr
     }
 }
 
 impl From<EndpointAddr> for EndpointTicket {
     /// Creates a ticket from given addressing info.
     fn from(addr: EndpointAddr) -> Self {
-        Self { node: addr }
+        Self { addr }
     }
 }
 
 impl From<EndpointTicket> for EndpointAddr {
     /// Returns the addressing info from given ticket.
     fn from(ticket: EndpointTicket) -> Self {
-        ticket.node
+        ticket.addr
     }
 }
 
@@ -111,8 +108,8 @@ impl Serialize for EndpointTicket {
         if serializer.is_human_readable() {
             serializer.serialize_str(&self.to_string())
         } else {
-            let EndpointTicket { node } = self;
-            (node).serialize(serializer)
+            let EndpointTicket { addr } = self;
+            (addr).serialize(serializer)
         }
     }
 }
@@ -129,12 +126,23 @@ impl<'de> Deserialize<'de> for EndpointTicket {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+struct Variant1EndpointAddr {
+    id: EndpointId,
+    info: Variant1AddrInfo,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Variant1AddrInfo {
+    addrs: BTreeSet<TransportAddr>,
+}
+
 #[cfg(test)]
 mod tests {
     use std::net::{Ipv4Addr, SocketAddr};
 
     use data_encoding::HEXLOWER;
-    use iroh_base::{PublicKey, SecretKey};
+    use iroh_base::{PublicKey, SecretKey, TransportAddr};
     use rand::SeedableRng;
 
     use super::*;
@@ -143,9 +151,8 @@ mod tests {
         let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0u64);
         let peer = SecretKey::generate(&mut rng).public();
         let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 1234));
-        let relay_url = None;
         EndpointTicket {
-            node: EndpointAddr::from_parts(peer, relay_url, [addr]),
+            addr: EndpointAddr::from_parts(peer, [TransportAddr::Ip(addr)]),
         }
     }
 
@@ -172,17 +179,19 @@ mod tests {
                 .unwrap();
 
         let ticket = EndpointTicket {
-            node: EndpointAddr::from_parts(
+            addr: EndpointAddr::from_parts(
                 endpoint_id,
-                Some("http://derp.me./".parse().unwrap()),
-                ["127.0.0.1:1024".parse().unwrap()],
+                [
+                    TransportAddr::Relay("http://derp.me./".parse().unwrap()),
+                    TransportAddr::Ip("127.0.0.1:1024".parse().unwrap()),
+                ],
             ),
         };
         let base32 = data_encoding::BASE32_NOPAD
             .decode(
                 ticket
                     .to_string()
-                    .strip_prefix("node")
+                    .strip_prefix("endpoint")
                     .unwrap()
                     .to_ascii_uppercase()
                     .as_bytes(),
@@ -191,20 +200,34 @@ mod tests {
         let expected = [
             // variant
             "00",
-            // node id, 32 bytes, see above
+            // endpoint id, 32 bytes, see above
             "ae58ff8833241ac82d6ff7611046ed67b5072d142c588d0063e942d9a75502b6",
-            // relay url present
-            "01",
-            // relay url, 16 bytes, see above
+            // two addrs
+            "02",
+            // TransportAddr: Relay
+            "00",
+            // 16 bytes
             "10",
+            // RelayUrl
             "687474703a2f2f646572702e6d652e2f",
-            // one direct address
+            // TransportAddr: IP
             "01",
-            // ipv4
+            // IPv4
             "00",
             // address, see above
             "7f0000018008",
         ];
+
+        // 00ae58ff8833241ac82d6ff7611046ed67b5072d142c588d0063e942d9a75502b6
+        // 02
+        // 00
+        // 10
+        // 687474703a2f2f646572702e6d652e2f
+        // 01
+        // 00
+        // 7f0000018008
+        dbg!(&expected);
+        dbg!(HEXLOWER.encode(&base32));
         let expected = HEXLOWER.decode(expected.concat().as_bytes()).unwrap();
         assert_eq!(base32, expected);
     }
