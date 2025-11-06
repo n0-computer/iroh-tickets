@@ -92,15 +92,11 @@
 <a href="#91" id="91">91</a>
 <a href="#92" id="92">92</a>
 <a href="#93" id="93">93</a>
-<a href="#94" id="94">94</a>
-<a href="#95" id="95">95</a>
-<a href="#96" id="96">96</a></pre></div><pre class="rust"><code><span class="doccomment">//! Tickets is a serializable object combining information required for an operation.
+<a href="#94" id="94">94</a></pre></div><pre class="rust"><code><span class="doccomment">//! Tickets is a serializable object combining information required for an operation.
 //! Typically tickets contain all information required for an operation, e.g. an iroh blob
 //! ticket would contain the hash of the data as well as information about how to reach the
 //! provider.
-
-</span><span class="kw">use </span>nested_enum_utils::common_fields;
-<span class="kw">use </span>snafu::{Backtrace, Snafu};
+</span><span class="kw">use </span>n0_error::{e, stack_error};
 
 <span class="kw">pub mod </span>endpoint;
 
@@ -139,7 +135,7 @@
     </span><span class="kw">fn </span>deserialize(str: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ParseError&gt; {
         <span class="kw">let </span>expected = <span class="self">Self</span>::KIND;
         <span class="kw">let </span><span class="prelude-val">Some</span>(rest) = str.strip_prefix(expected) <span class="kw">else </span>{
-            <span class="kw">return </span><span class="prelude-val">Err</span>(KindSnafu { expected }.build());
+            <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">e!</span>(ParseError::Kind { expected }));
         };
         <span class="kw">let </span>bytes = data_encoding::BASE32_NOPAD.decode(rest.to_ascii_uppercase().as_bytes())<span class="question-mark">?</span>;
         <span class="kw">let </span>ticket = <span class="self">Self</span>::from_bytes(<span class="kw-2">&amp;</span>bytes)<span class="question-mark">?</span>;
@@ -148,30 +144,30 @@
 }
 
 <span class="doccomment">/// An error deserializing an iroh ticket.
-</span><span class="attr">#[common_fields({
-    backtrace: <span class="prelude-ty">Option</span>&lt;Backtrace&gt;,
-    <span class="attr">#[snafu(implicit)]
-    </span>span_trace: n0_snafu::SpanTrace,
-})]
-<span class="attr">#[derive(Debug, Snafu)]
+</span><span class="attr">#[stack_error(derive, add_meta, from_sources)]
 #[allow(missing_docs)]
-#[snafu(visibility(<span class="kw">pub</span>(<span class="kw">crate</span>)))]
 #[non_exhaustive]
 </span><span class="kw">pub enum </span>ParseError {
     <span class="doccomment">/// Found a ticket with the wrong prefix, indicating the wrong kind.
-    </span><span class="attr">#[snafu(display(<span class="string">"wrong prefix, expected {expected}"</span>))]
+    </span><span class="attr">#[error(<span class="string">"wrong prefix, expected {expected}"</span>)]
     </span>Kind {
         <span class="doccomment">/// The expected prefix.
         </span>expected: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str,
     },
     <span class="doccomment">/// This looks like a ticket, but postcard deserialization failed.
-    </span><span class="attr">#[snafu(transparent)]
-    </span>Postcard { source: postcard::Error },
+    </span><span class="attr">#[error(transparent)]
+    </span>Postcard {
+        <span class="attr">#[error(source, std_err)]
+        </span>source: postcard::Error,
+    },
     <span class="doccomment">/// This looks like a ticket, but base32 decoding failed.
-    </span><span class="attr">#[snafu(transparent)]
-    </span>Encoding { source: data_encoding::DecodeError },
+    </span><span class="attr">#[error(transparent)]
+    </span>Encoding {
+        <span class="attr">#[error(source, std_err)]
+        </span>source: data_encoding::DecodeError,
+    },
     <span class="doccomment">/// Verification of the deserialized bytes failed.
-    </span><span class="attr">#[snafu(display(<span class="string">"verification failed: {message}"</span>))]
+    </span><span class="attr">#[error(<span class="string">"verification failed: {message}"</span>)]
     </span>Verify { message: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str },
 }
 
@@ -181,13 +177,13 @@
     ///
     /// Indicate the expected prefix.
     </span><span class="kw">pub fn </span>wrong_prefix(expected: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str) -&gt; <span class="self">Self </span>{
-        KindSnafu { expected }.build()
+        <span class="macro">e!</span>(ParseError::Kind { expected })
     }
 
     <span class="doccomment">/// Return a `ParseError` variant that indicates verification of the
     /// deserialized bytes failed.
     </span><span class="kw">pub fn </span>verification_failed(message: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str) -&gt; <span class="self">Self </span>{
-        VerifySnafu { message }.build()
+        <span class="macro">e!</span>(ParseError::Verify { message })
     }
 }
 </code></pre></div></section></main></body></html>
