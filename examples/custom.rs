@@ -50,7 +50,7 @@ struct Variant0NodeTicket {
 impl Ticket for CustomIrohTicket {
     // KIND is the constant that's added to the front of a serialized ticket
     // string. It should be a short, human readble string
-    const KIND: &'static str = "zed";
+    const KIND: &'static str = "custom";
 
     fn to_bytes(&self) -> Vec<u8> {
         let data = TicketWireFormat::Variant0(Variant0NodeTicket {
@@ -98,7 +98,7 @@ impl CustomIrohTicket {
     }
 }
 
-impl From<CustomIrohTicket> for NodeAddr {
+impl From<CustomIrohTicket> for EndpointAddr {
     /// Returns the addressing info from given ticket.
     fn from(ticket: CustomIrohTicket) -> Self {
         ticket.node
