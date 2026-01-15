@@ -19,7 +19,7 @@ missing_debug_implementations = "warn"
 unused-async = "warn"
 
 [dependencies]
-data-encoding = "2.9.0"
+data-encoding = "2.10.0"
 derive_more = { version = "2.0.1", features = ["display"] }
 iroh-base = { version = "0.95", features = ["key"] }
 n0-error = "0.1"
