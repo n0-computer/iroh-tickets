@@ -20,10 +20,10 @@ use crate::{ParseError, Ticket};
 /// implements the [`Ticket`] trait.  The [`Display`] and [`FromStr`] traits can also be
 /// used to round-trip the ticket to string.
 ///
-/// [`EndpointId`]: crate::key::EndpointId
+/// [`EndpointId`]: iroh_base::EndpointId
 /// [`Display`]: std::fmt::Display
 /// [`FromStr`]: std::str::FromStr
-/// [`TransportAddr`]: crate::TransportAddr
+/// [`TransportAddr`]: iroh_base::TransportAddr
 #[derive(Debug, Clone, PartialEq, Eq, derive_more::Display)]
 #[display("{}", Ticket::serialize(self))]
 pub struct EndpointTicket {
