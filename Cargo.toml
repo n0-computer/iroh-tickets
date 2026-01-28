@@ -10,7 +10,7 @@ repository = "https://github.com/n0-computer/iroh-tickets"
 keywords = ["quic", "networking", "holepunching", "p2p"]
 
 # Sadly this also needs to be updated in .github/workflows/ci.yml
-rust-version = "1.85"
+rust-version = "1.89"
 
 [lints.rust]
 missing_debug_implementations = "warn"
@@ -21,7 +21,7 @@ unused-async = "warn"
 [dependencies]
 data-encoding = "2.9.0"
 derive_more = { version = "2.0.1", features = ["display"] }
-iroh-base = { version = "0.95", features = ["key"] }
+iroh-base = { version = "0.96", features = ["key"] }
 n0-error = "0.1"
 postcard = { version = "1.1.3", features = ["use-std"] }
 serde = { version = "1.0.228", features = ["derive"] }
@@ -30,6 +30,3 @@ serde = { version = "1.0.228", features = ["derive"] }
 rand = "0.9.2"
 rand_chacha = "0.9.0"
 serde_json = "1.0.145"
-
-[patch.crates-io]
-iroh-base = { git = "https://github.com/n0-computer/iroh", branch = "release-0-96" }
