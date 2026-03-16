@@ -361,7 +361,7 @@ dependencies = [
 [[package]]
 name = "iroh-base"
 version = "0.96.1"
-source = "git+https://github.com/n0-computer/iroh.git?branch=main#df0777a21ab2c19be86e4b7f0f60331f94a95a3b"
+source = "git+https://github.com/n0-computer/iroh.git?branch=main#b3da9402f48c876f0dd60c9014f7c3443de23b6b"
 dependencies = [
  "curve25519-dalek",
  "data-encoding",
