@@ -142,13 +142,13 @@ mod tests {
 
     use data_encoding::HEXLOWER;
     use iroh_base::{PublicKey, SecretKey, TransportAddr};
-    use rand::SeedableRng;
+    use rand::{RngExt, SeedableRng};
 
     use super::*;
 
     fn make_ticket() -> EndpointTicket {
-        let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0u64);
-        let peer = SecretKey::generate(&mut rng).public();
+        let mut rng = rand::rngs::ChaCha8Rng::seed_from_u64(0u64);
+        let peer = SecretKey::from_bytes(&rng.random()).public();
         let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 1234));
         EndpointTicket {
             addr: EndpointAddr::from_parts(peer, [TransportAddr::Ip(addr)]),
