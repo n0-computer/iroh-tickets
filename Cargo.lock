@@ -496,7 +496,7 @@ dependencies = [
 
 [[package]]
 name = "iroh-tickets"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "data-encoding",
  "derive_more",
