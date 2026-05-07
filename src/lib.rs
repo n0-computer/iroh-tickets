@@ -1,15 +1,15 @@
-//! Tickets is a serializable object combining information required for an operation.
-//! Typically tickets contain all information required for an operation, e.g. an iroh blob
-//! ticket would contain the hash of the data as well as information about how to reach the
-//! provider.
+#![doc = include_str!("../README.md")]
+
 use n0_error::{e, stack_error};
 
 pub mod endpoint;
 
 /// A ticket is a serializable object combining information required for an operation.
 ///
-/// Tickets support serialization to a string using base32 encoding. The kind of
-/// ticket will be prepended to the string to make it somewhat self describing.
+/// Tickets are convertible to and from a byte representation via [`encode_bytes`] /
+/// [`decode_bytes`], and to and from a canonical string form (the lowercase [`KIND`]
+/// prefix followed by base32 of the bytes) via [`encode_string`] / [`decode_string`].
+/// Implementers only need to provide [`KIND`], [`encode_bytes`], and [`decode_bytes`].
 ///
 /// Versioning is left to the implementer. Some kinds of tickets might need
 /// versioning, others might not.
@@ -17,6 +17,11 @@ pub mod endpoint;
 /// The serialization format for converting the ticket from and to bytes is left
 /// to the implementer. We recommend using [postcard] for serialization.
 ///
+/// [`KIND`]: Ticket::KIND
+/// [`encode_bytes`]: Ticket::encode_bytes
+/// [`decode_bytes`]: Ticket::decode_bytes
+/// [`encode_string`]: Ticket::encode_string
+/// [`decode_string`]: Ticket::decode_string
 /// [postcard]: https://docs.rs/postcard/latest/postcard/
 pub trait Ticket: Sized {
     /// String prefix describing the kind of iroh ticket.
@@ -24,28 +29,38 @@ pub trait Ticket: Sized {
     /// This should be lower case ascii characters.
     const KIND: &'static str;
 
-    /// Serialize to bytes used in the base32 string representation.
-    fn to_bytes(&self) -> Vec<u8>;
+    /// Encode the ticket into its byte representation.
+    fn encode_bytes(&self) -> Vec<u8>;
 
-    /// Deserialize from the base32 string representation bytes.
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ParseError>;
+    /// Decode a ticket from its byte representation.
+    fn decode_bytes(bytes: &[u8]) -> Result<Self, ParseError>;
 
-    /// Serialize to string.
-    fn serialize(&self) -> String {
+    /// Encode the ticket into its canonical string form.
+    ///
+    /// The default implementation produces the lowercase [`KIND`](Self::KIND) prefix
+    /// followed by base32 (no padding) of [`encode_bytes`](Self::encode_bytes).
+    /// Implementers may override this to use a different string encoding, in which
+    /// case [`decode_string`](Self::decode_string) must be overridden to match.
+    fn encode_string(&self) -> String {
         let mut out = Self::KIND.to_string();
-        data_encoding::BASE32_NOPAD.encode_append(&self.to_bytes(), &mut out);
-        out.to_ascii_lowercase()
+        data_encoding::BASE32_NOPAD.encode_append(&self.encode_bytes(), &mut out);
+        out.make_ascii_lowercase();
+        out
     }
 
-    /// Deserialize from a string.
-    fn deserialize(str: &str) -> Result<Self, ParseError> {
+    /// Decode a ticket from its canonical string form.
+    ///
+    /// The default implementation expects the lowercase [`KIND`](Self::KIND) prefix
+    /// followed by base32 (no padding) of the bytes accepted by
+    /// [`decode_bytes`](Self::decode_bytes). Implementers that override
+    /// [`encode_string`](Self::encode_string) must override this to match.
+    fn decode_string(s: &str) -> Result<Self, ParseError> {
         let expected = Self::KIND;
-        let Some(rest) = str.strip_prefix(expected) else {
+        let Some(rest) = s.strip_prefix(expected) else {
             return Err(e!(ParseError::Kind { expected }));
         };
         let bytes = data_encoding::BASE32_NOPAD.decode(rest.to_ascii_uppercase().as_bytes())?;
-        let ticket = Self::from_bytes(&bytes)?;
-        Ok(ticket)
+        Self::decode_bytes(&bytes)
     }
 }
 
