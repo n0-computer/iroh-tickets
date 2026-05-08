@@ -10,6 +10,37 @@
 
 > Simple ticket system used for signaling with [iroh](https://github.com/n0-computer/iroh).
 
+A ticket bundles the information needed to reach an iroh endpoint into a single
+serializable value. Tickets are expected to round-trip to and from their canonical string form
+(lowercase kind prefix + base32) as well as to and from their byte form, via the
+[`Ticket`](https://docs.rs/iroh-tickets/latest/iroh_tickets/trait.Ticket.html) trait.
+
+## Example
+
+```rust
+use std::str::FromStr;
+
+use iroh_base::{EndpointAddr, PublicKey, TransportAddr};
+use iroh_tickets::{Ticket, endpoint::EndpointTicket};
+
+let pk = PublicKey::from_str(
+    "ae58ff8833241ac82d6ff7611046ed67b5072d142c588d0063e942d9a75502b6",
+)
+.unwrap();
+let addr = EndpointAddr::from_parts(
+    pk,
+    [TransportAddr::Ip("127.0.0.1:1234".parse().unwrap())],
+);
+let ticket = EndpointTicket::new(addr);
+
+// Encode to the canonical string form (lowercase KIND prefix + base32).
+let encoded = ticket.encode_string();
+assert!(encoded.starts_with("endpoint"));
+
+// Decode back via `FromStr` (which delegates to `Ticket::decode_string`).
+let decoded: EndpointTicket = encoded.parse().unwrap();
+assert_eq!(ticket, decoded);
+```
 
 ## License
 
@@ -18,9 +49,9 @@ Copyright 2026 N0, INC.
 This project is licensed under either of
 
  * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
-   http://www.apache.org/licenses/LICENSE-2.0)
+   <http://www.apache.org/licenses/LICENSE-2.0>)
  * MIT license ([LICENSE-MIT](LICENSE-MIT) or
-   http://opensource.org/licenses/MIT)
+   <http://opensource.org/licenses/MIT>)
 
 at your option.
 

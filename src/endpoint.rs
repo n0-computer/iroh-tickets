@@ -16,16 +16,17 @@ use crate::{ParseError, Ticket};
 /// This allows establishing a connection to the endpoint in most circumstances where it is
 /// possible to do so.
 ///
-/// This [`EndpointTicket`] is a single item which can be easily serialized and deserialized and
-/// implements the [`Ticket`] trait.  The [`Display`] and [`FromStr`] traits can also be
-/// used to round-trip the ticket to string.
+/// This [`EndpointTicket`] is a single item which can be easily serialized and deserialized
+/// and implements the [`Ticket`] trait. The [`Display`] and [`FromStr`] traits round-trip
+/// the canonical string form via [`Ticket::encode_string`] / [`Ticket::decode_string`].
 ///
-/// [`EndpointId`]: iroh_base::EndpointId
 /// [`Display`]: std::fmt::Display
 /// [`FromStr`]: std::str::FromStr
+///
+/// [`EndpointId`]: iroh_base::EndpointId
 /// [`TransportAddr`]: iroh_base::TransportAddr
 #[derive(Debug, Clone, PartialEq, Eq, derive_more::Display)]
-#[display("{}", Ticket::serialize(self))]
+#[display("{}", Ticket::encode_string(self))]
 pub struct EndpointTicket {
     addr: EndpointAddr,
 }
@@ -44,7 +45,7 @@ struct Variant1EndpointTicket {
 impl Ticket for EndpointTicket {
     const KIND: &'static str = "endpoint";
 
-    fn to_bytes(&self) -> Vec<u8> {
+    fn encode_bytes(&self) -> Vec<u8> {
         let data = TicketWireFormat::Variant1(Variant1EndpointTicket {
             addr: Variant1EndpointAddr {
                 id: self.addr.id,
@@ -56,7 +57,7 @@ impl Ticket for EndpointTicket {
         postcard::to_stdvec(&data).expect("postcard serialization failed")
     }
 
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ParseError> {
+    fn decode_bytes(bytes: &[u8]) -> Result<Self, ParseError> {
         let res: TicketWireFormat = postcard::from_bytes(bytes)?;
         let TicketWireFormat::Variant1(Variant1EndpointTicket { addr }) = res;
         Ok(Self {
@@ -72,7 +73,7 @@ impl FromStr for EndpointTicket {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ticket::deserialize(s)
+        Ticket::decode_string(s)
     }
 }
 
@@ -105,7 +106,7 @@ impl From<EndpointTicket> for EndpointAddr {
 impl Serialize for EndpointTicket {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         if serializer.is_human_readable() {
-            serializer.serialize_str(&self.to_string())
+            serializer.serialize_str(&self.encode_string())
         } else {
             let EndpointTicket { addr } = self;
             (addr).serialize(serializer)
@@ -117,7 +118,7 @@ impl<'de> Deserialize<'de> for EndpointTicket {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         if deserializer.is_human_readable() {
             let s = String::deserialize(deserializer)?;
-            Self::from_str(&s).map_err(serde::de::Error::custom)
+            Self::decode_string(&s).map_err(serde::de::Error::custom)
         } else {
             let peer = Deserialize::deserialize(deserializer)?;
             Ok(Self::new(peer))
@@ -138,7 +139,10 @@ struct Variant1AddrInfo {
 
 #[cfg(test)]
 mod tests {
-    use std::net::{Ipv4Addr, SocketAddr};
+    use std::{
+        net::{Ipv4Addr, SocketAddr},
+        str::FromStr,
+    };
 
     use data_encoding::HEXLOWER;
     use iroh_base::{PublicKey, SecretKey, TransportAddr};
@@ -189,7 +193,7 @@ mod tests {
         let base32 = data_encoding::BASE32_NOPAD
             .decode(
                 ticket
-                    .to_string()
+                    .encode_string()
                     .strip_prefix("endpoint")
                     .unwrap()
                     .to_ascii_uppercase()
