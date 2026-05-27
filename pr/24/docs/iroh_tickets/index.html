@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="iroh-tickets"><title>iroh_tickets - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-0bd2dfd4.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="iroh_tickets" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (e96bb7e44 2026-01-27)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-f9617a14.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate iroh_tickets</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../iroh_tickets/index.html">iroh_<wbr>tickets</a><span class="version">1.0.0-rc.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#iroh-tickets" title="iroh-tickets">iroh-tickets</a><ul><li><a href="#example" title="Example">Example</a></li><li><a href="#license" title="License">License</a></li><li><a href="#contribution" title="Contribution">Contribution</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>iroh_<wbr>tickets</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/iroh_tickets/lib.rs.html#1-109">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="iroh-tickets"><a class="doc-anchor" href="#iroh-tickets">§</a>iroh-tickets</h2>
+<p><a href="https://docs.rs/iroh-tickets/"><img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square" alt="Documentation" /></a>
+<a href="https://crates.io/crates/iroh-tickets"><img src="https://img.shields.io/crates/v/iroh-tickets.svg?style=flat-square" alt="Crates.io" /></a>
+<a href="https://crates.io/crates/iroh-tickets"><img src="https://img.shields.io/crates/d/iroh-tickets.svg?style=flat-square" alt="downloads" /></a>
+<a href="https://discord.com/invite/DpmJgtU7cW"><img src="https://img.shields.io/discord/1161119546170687619?logo=discord&amp;style=flat-square" alt="Chat" /></a>
+<a href="LICENSE-MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT" /></a>
+<a href="LICENSE-APACHE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square" alt="License: Apache 2.0" /></a>
+<a href="https://github.com/n0-computer/iroh-tickets/actions/workflows/ci.yaml"><img src="https://img.shields.io/github/actions/workflow/status/n0-computer/iroh-tickets/ci.yaml?branch=main&amp;style=flat-square&amp;label=CI" alt="CI" /></a></p>
+<blockquote>
+<p>Simple ticket system used for signaling with <a href="https://github.com/n0-computer/iroh">iroh</a>.</p>
+</blockquote>
+<p>A ticket bundles the information needed to reach an iroh endpoint into a single
+serializable value. Tickets are expected to round-trip to and from their canonical string form
+(lowercase kind prefix + base32) as well as to and from their byte form, via the
+<a href="https://docs.rs/iroh-tickets/latest/iroh_tickets/trait.Ticket.html"><code>Ticket</code></a> trait.</p>
+<h3 id="example"><a class="doc-anchor" href="#example">§</a>Example</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::str::FromStr;
+
+<span class="kw">use </span>iroh_base::{EndpointAddr, PublicKey, TransportAddr};
+<span class="kw">use </span>iroh_tickets::{Ticket, endpoint::EndpointTicket};
+
+<span class="kw">let </span>pk = PublicKey::from_str(
+    <span class="string">"ae58ff8833241ac82d6ff7611046ed67b5072d142c588d0063e942d9a75502b6"</span>,
+)
+.unwrap();
+<span class="kw">let </span>addr = EndpointAddr::from_parts(
+    pk,
+    [TransportAddr::Ip(<span class="string">"127.0.0.1:1234"</span>.parse().unwrap())],
+);
+<span class="kw">let </span>ticket = EndpointTicket::new(addr);
+
+<span class="comment">// Encode to the canonical string form (lowercase KIND prefix + base32).
+</span><span class="kw">let </span>encoded = ticket.encode_string();
+<span class="macro">assert!</span>(encoded.starts_with(<span class="string">"endpoint"</span>));
+
+<span class="comment">// Decode back via `FromStr` (which delegates to `Ticket::decode_string`).
+</span><span class="kw">let </span>decoded: EndpointTicket = encoded.parse().unwrap();
+<span class="macro">assert_eq!</span>(ticket, decoded);</code></pre></div><h3 id="license"><a class="doc-anchor" href="#license">§</a>License</h3>
+<p>Copyright 2026 N0, INC.</p>
+<p>This project is licensed under either of</p>
+<ul>
+<li>Apache License, Version 2.0, (<a href="LICENSE-APACHE">LICENSE-APACHE</a> or
+<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a>)</li>
+<li>MIT license (<a href="LICENSE-MIT">LICENSE-MIT</a> or
+<a href="http://opensource.org/licenses/MIT">http://opensource.org/licenses/MIT</a>)</li>
+</ul>
+<p>at your option.</p>
+<h3 id="contribution"><a class="doc-anchor" href="#contribution">§</a>Contribution</h3>
+<p>Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this project by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="endpoint/index.html" title="mod iroh_tickets::endpoint">endpoint</a></dt><dd>Tickets for endpoints.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.ParseError.html" title="enum iroh_tickets::ParseError">Parse<wbr>Error</a></dt><dd>An error deserializing an iroh ticket.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Ticket.html" title="trait iroh_tickets::Ticket">Ticket</a></dt><dd>A ticket is a serializable object combining information required for an operation.</dd></dl></section></div></main></body></html>
